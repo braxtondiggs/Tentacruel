@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { UtilService } from './util.service';
 import { Book } from './app/app.entity';
+import { HistoryModule } from './history/history.module';
 
 const logger = new Logger('MikroORM');
 const entities = [Book];
@@ -12,11 +13,13 @@ const entities = [Book];
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
-      load: [async () => {
-        const utils = new UtilService();
-        const client_url = await utils.getSecret('MONGO_CLIENTURL');
-        return { client_url };
-      }],
+      load: [
+        async () => {
+          const utils = new UtilService();
+          const client_url = await utils.getSecret('MONGO_CLIENTURL');
+          return { client_url };
+        },
+      ],
     }),
     MikroOrmModule.forRootAsync({
       useFactory: (config: ConfigService) => ({
@@ -24,14 +27,14 @@ const entities = [Book];
         debug: !process.env.production,
         entities,
         logger: logger.log.bind(logger),
-        type: 'mongo'
+        type: 'mongo',
       }),
-      inject: [ConfigService]
+      inject: [ConfigService],
     }),
-    MikroOrmModule.forFeature({ entities })
+    MikroOrmModule.forFeature({ entities }),
+    HistoryModule,
   ],
   exports: [MikroOrmModule],
-  providers: [UtilService]
+  providers: [UtilService],
 })
-export class OrmModule {
-}
+export class OrmModule {}
